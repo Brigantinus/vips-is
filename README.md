@@ -136,5 +136,5 @@ curl http://localhost:8080/iiif/v2/image/myimage.jpg/full/max/90/color.png
 
 - [IIIF](https://iiif.io/) - The International Image Interoperability Framework
 - [VIPS](https://libvips.github.io/libvips/) - The image processing library
-- 
+- [VIPS-FFM](https://github.com/lopcode/vips-ffm) - The libvips-bindings for Java.
 - [Quarkus](https://quarkus.io/) - The Java framework
