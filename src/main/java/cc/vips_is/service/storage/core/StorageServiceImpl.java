@@ -28,7 +28,7 @@ public class StorageServiceImpl implements StorageService {
             throw new IllegalStateException("Image input directory is not configured");
         }
 
-        storagePath = Paths.get(storageDirectory).toAbsolutePath().normalize();;
+        storagePath = Paths.get(storageDirectory).toAbsolutePath().normalize();
 
         if (!Files.exists(storagePath)) {
             throw new StorageException("Base directory does not exist.")

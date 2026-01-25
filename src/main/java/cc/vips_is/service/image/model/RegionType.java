@@ -4,6 +4,5 @@ public enum RegionType {
     FULL,
     SQUARE,
     PERCENTAGE,
-    PIXELS;
-
+    PIXELS
 }
