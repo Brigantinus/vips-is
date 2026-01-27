@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Provider
-@CacheConfigured // This is the annotation we created in the previous step
+@CacheConfigured
 public class ImageClientCacheFilter implements ContainerResponseFilter {
 
     @Inject

@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
+
 @AllArgsConstructor
 @Getter
 public class SizeInfo {
@@ -15,6 +17,7 @@ public class SizeInfo {
     private static final String FULL = "full";
     private static final String COMMA = ",";
     private static final String PCT_PREFIX = "pct:";
+    private static final String MINUS = "-";
 
     private SizeType type;
     private Integer width;
@@ -54,6 +57,9 @@ public class SizeInfo {
         if (StringUtils.isBlank(size)) {
             throw new InvalidParameterException("Size parameter cannot be null or empty");
         }
+        if (size.contains(MINUS)) {
+            throw new InvalidParameterException("Size parameter contains negative value");
+        }
 
         String cleaned = size.trim();
 
@@ -76,6 +82,10 @@ public class SizeInfo {
     public static SizeInfo fromV3String(String size) {
         if (StringUtils.isBlank(size)) {
             throw new InvalidParameterException("Size parameter cannot be null or empty");
+        }
+
+        if (size.contains(MINUS)) {
+            throw new InvalidParameterException("Size parameter contains negative value");
         }
 
         boolean upscalingAllowed = size.startsWith(UPSCALE_PREFIX);
@@ -118,12 +128,12 @@ public class SizeInfo {
         Integer width = parseSingleDimension(parts[0].trim(), "width");
         Integer height = parseSingleDimension(parts[1].trim(), "height");
 
-        if (width == null && height == null) {
+        if (Objects.isNull(width) && Objects.isNull(height)) {
             throw new InvalidParameterException("Width and height cannot both be empty.");
         }
 
-        if (width == null) return SizeInfo.heightOnly(height);
-        if (height == null) return SizeInfo.widthOnly(width);
+        if (Objects.isNull(width)) return SizeInfo.heightOnly(height);
+        if (Objects.isNull(height)) return SizeInfo.widthOnly(width);
 
         return SizeInfo.widthHeight(width, height, upscale, keepAspect);
     }
