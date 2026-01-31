@@ -41,7 +41,7 @@ jobs:
         run: |
           docker build \
             -t ${{ env.image }}/vips-is-base:latest \
-            -f docker/vis-is-base.Dockerfile .
+            -f docker/vips-is-base.Dockerfile .
           docker push ${{ env.image }}/vips-is-base:latest
 
   build-app:
