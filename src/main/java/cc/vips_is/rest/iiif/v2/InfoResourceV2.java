@@ -10,9 +10,11 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -29,6 +31,20 @@ public class InfoResourceV2 {
 
     @ConfigProperty(name = "rest.base-url")
     String baseUrl;
+
+    @GET
+    @Path("/{identifier}")
+    public Response redirectToInfo(@PathParam("identifier") String identifier) {
+        log.debug("Redirecting base URL for identifier={}", identifier);
+
+        URI infoUri = UriBuilder.fromUri(baseUrl)
+                .path(IIIF_V2_PATH)
+                .path(URLEncoder.encode(identifier, StandardCharsets.UTF_8))
+                .path("info.json")
+                .build();
+
+        return Response.seeOther(infoUri).build();
+    }
 
     @GET
     @Path("/{identifier}/info.json")

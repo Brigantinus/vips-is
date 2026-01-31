@@ -7,8 +7,10 @@ import cc.vips_is.service.image.model.ImageInfo;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -18,6 +20,7 @@ import java.util.Objects;
 import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 
 @Path("/iiif/v3/image")
+@Slf4j
 public class InfoResourceV3 {
 
     private static final String IIIF_V3_PATH =  "/iiif/v3/image/";
@@ -31,6 +34,20 @@ public class InfoResourceV3 {
 
     @ConfigProperty(name = "rest.base-url")
     String baseUrl;
+
+    @GET
+    @Path("/{identifier}")
+    public Response redirectToInfo(@PathParam("identifier") String identifier) {
+        log.debug("Redirecting base URL for identifier={}", identifier);
+
+        URI infoUri = UriBuilder.fromUri(baseUrl)
+                .path(IIIF_V3_PATH)
+                .path(URLEncoder.encode(identifier, StandardCharsets.UTF_8))
+                .path("info.json")
+                .build();
+
+        return Response.seeOther(infoUri).build();
+    }
 
     @GET
     @Path("/{identifier}/info.json")
