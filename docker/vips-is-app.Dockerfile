@@ -1,4 +1,4 @@
-FROM vips-is-base:latest
+FROM ghcr.io/brigantinus/vips-is/vips-is-base:latest
 
 WORKDIR /deployments
 
