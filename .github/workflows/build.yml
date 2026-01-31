@@ -3,6 +3,7 @@ name: Build Vips-IS
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 # Global variables available to all jobs
 env:
