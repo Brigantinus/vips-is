@@ -13,11 +13,9 @@ import cc.vips_is.service.storage.StorageService;
 import cc.vips_is.service.storage.exceptions.ImageNotFoundException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.StreamingOutput;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -49,8 +47,6 @@ public class ImageServiceImpl implements ImageService {
     public ImageInfo getImageInfo(String identifier) {
         log.debug("getImageInfo: identifier={}", identifier);
 
-        validateExtension(identifier);
-
         Path imagePath = storageService.resolve(identifier);
         ImageData imageData = vipsProcessor.readImageData(identifier, imagePath);
         return imageInfoCalculator.calculateImageInfo(imageData);
@@ -69,11 +65,6 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public StreamingOutput processImage(@NonNull ImageRequest request) {
         log.debug("processImage: request={}", request);
-
-        String extension = FilenameUtils.getExtension(request.identifier());
-        if (!config.sourceFormats().contains(extension.toLowerCase())) {
-            throw new BadRequestException("Invalid image format: " + extension);
-        }
 
         Path inputPath = storageService.resolve(request.identifier());
 
@@ -109,13 +100,6 @@ public class ImageServiceImpl implements ImageService {
                 throw new ImageProcessingException("Error during image transformation", e);
             }
         };
-    }
-
-    void validateExtension(String identifier) {
-        String extension = FilenameUtils.getExtension(identifier);
-        if (!config.sourceFormats().contains(extension.toLowerCase())) {
-            throw new BadRequestException("Invalid image format: " + extension);
-        }
     }
 
     void validateConstraints(Size size) {
