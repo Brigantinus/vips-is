@@ -10,7 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegionCalculatorTest {
-
+    
+    RegionCalculator regionCalculator = new RegionCalculator();
+    
     @Test
     public void testCalculateRegionFull() {
         // Given
@@ -19,7 +21,7 @@ public class RegionCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(0, result.left());
@@ -36,7 +38,7 @@ public class RegionCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(100, result.left());  // (800 - 600) / 2
@@ -53,7 +55,7 @@ public class RegionCalculatorTest {
         int imageHeight = 800;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(0, result.left());
@@ -70,7 +72,7 @@ public class RegionCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(100, result.left());
@@ -88,7 +90,7 @@ public class RegionCalculatorTest {
 
         // When & Then
         assertThrows(InvalidParameterException.class, () -> {
-            RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+            regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
         });
     }
 
@@ -101,7 +103,7 @@ public class RegionCalculatorTest {
 
         // When & Then
         assertThrows(InvalidParameterException.class, () -> {
-            RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+            regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
         });
     }
 
@@ -114,7 +116,7 @@ public class RegionCalculatorTest {
 
         // When & Then
         assertThrows(InvalidParameterException.class, () -> {
-            RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+            regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
         });
     }
 
@@ -126,7 +128,7 @@ public class RegionCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(100, result.left());
@@ -143,7 +145,7 @@ public class RegionCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(80, result.left());   // 10% of 800 = 80
@@ -160,7 +162,7 @@ public class RegionCalculatorTest {
         int imageHeight = 500;
 
         // When
-        Region result = RegionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
+        Region result = regionCalculator.calculateRegion(regionInfo, imageWidth, imageHeight);
 
         // Then
         assertEquals(330, result.left());   // 33% of 1000 = 330

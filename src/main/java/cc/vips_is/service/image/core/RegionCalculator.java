@@ -3,12 +3,14 @@ package cc.vips_is.service.image.core;
 import cc.vips_is.service.image.exceptions.InvalidParameterException;
 import cc.vips_is.service.image.model.Region;
 import cc.vips_is.service.image.model.RegionInfo;
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 
+@ApplicationScoped
 @Slf4j
-class RegionCalculator {
+public class RegionCalculator {
 
-    public static Region calculateRegion(RegionInfo regionInfo, int imageWidth, int imageHeight) {
+    public Region calculateRegion(RegionInfo regionInfo, int imageWidth, int imageHeight) {
         log.debug("calculateRegion: regionInfo: {}, imageWidth: {}, imageHeight: {}",
                 regionInfo, imageWidth, imageHeight);
 
@@ -23,18 +25,18 @@ class RegionCalculator {
         return region;
     }
 
-    private static Region regionFull(int imageWidth, int imageHeight) {
+    Region regionFull(int imageWidth, int imageHeight) {
         return new Region(0, 0, imageWidth, imageHeight);
     }
 
-    private static Region regionSquare(int imageWidth, int imageHeight) {
+    Region regionSquare(int imageWidth, int imageHeight) {
         int size = Math.min(imageWidth, imageHeight);
         int x = (imageWidth - size) / 2;
         int y = (imageHeight - size) / 2;
         return new Region(x, y, size, size);
     }
 
-    private static Region regionPixel(RegionInfo regionInfo, int imageWidth, int imageHeight) {
+    Region regionPixel(RegionInfo regionInfo, int imageWidth, int imageHeight) {
         int x = regionInfo.x();
         int y = regionInfo.y();
 
@@ -48,7 +50,7 @@ class RegionCalculator {
         return new Region(x, y, width, height);
     }
 
-    private static Region regionPercentage(RegionInfo regionInfo, int imageWidth, int imageHeight) {
+    Region regionPercentage(RegionInfo regionInfo, int imageWidth, int imageHeight) {
         int x = (int) Math.round(regionInfo.x() * imageWidth / 100.0);
         int y = (int) Math.round(regionInfo.y() * imageHeight / 100.0);
         int width = (int) Math.round(regionInfo.width() * imageWidth / 100.0);

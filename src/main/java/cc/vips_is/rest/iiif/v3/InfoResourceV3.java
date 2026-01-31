@@ -2,7 +2,7 @@ package cc.vips_is.rest.iiif.v3;
 
 import cc.vips_is.rest.config.CacheConfigured;
 import cc.vips_is.rest.iiif.v3.model.ImageInfoV3;
-import cc.vips_is.service.image.InfoService;
+import cc.vips_is.service.image.ImageService;
 import cc.vips_is.service.image.model.ImageInfo;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -27,7 +27,7 @@ public class InfoResourceV3 {
     private static final String JSON_LD = "application/ld+json";
 
     @Inject
-    InfoService service;
+    ImageService imageService;
 
     @ConfigProperty(name = "rest.base-url")
     String baseUrl;
@@ -40,7 +40,7 @@ public class InfoResourceV3 {
             @PathParam("identifier") String identifier,
             @Context Request request) {
 
-        ImageInfo imageInfo = service.getImageInfo(identifier);
+        ImageInfo imageInfo = imageService.getImageInfo(identifier);
 
         ImageInfoV3 imageInfoV3 = ImageInfoV3.builder()
                 .id(baseUrl + IIIF_V3_PATH + URLEncoder.encode(imageInfo.getId(), StandardCharsets.UTF_8))
@@ -68,7 +68,7 @@ public class InfoResourceV3 {
             @PathParam("identifier") String identifier,
             @Context Request request) {
 
-        boolean exists = service.exists(identifier);
+        boolean exists = imageService.exists(identifier);
         MediaType responseType = matchMediaType(request);
 
         return (exists ? Response.ok() : Response.status(NOT_FOUND))

@@ -1,7 +1,7 @@
 package cc.vips_is.rest.iiif.v2;
 
 import cc.vips_is.rest.iiif.v2.model.ImageInfoV2;
-import cc.vips_is.service.image.InfoService;
+import cc.vips_is.service.image.ImageService;
 import cc.vips_is.service.image.model.ImageInfo;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -25,7 +25,7 @@ public class InfoResourceV2 {
     private static final String IIIF_V2_PATH =  "/iiif/v2/image/";
 
     @Inject
-    InfoService infoService;
+    ImageService imageService;
 
     @ConfigProperty(name = "rest.base-url")
     String baseUrl;
@@ -36,7 +36,7 @@ public class InfoResourceV2 {
     public Response getImageInfo(@PathParam("identifier") String identifier) {
         log.debug("getImageInfo: identifier={}", identifier);
 
-        ImageInfo imageInfo = infoService.getImageInfo(identifier);
+        ImageInfo imageInfo = imageService.getImageInfo(identifier);
 
         ImageInfoV2 imageInfoV2 = ImageInfoV2.builder()
                 .id(baseUrl + IIIF_V2_PATH + URLEncoder.encode(imageInfo.getId(), StandardCharsets.UTF_8))

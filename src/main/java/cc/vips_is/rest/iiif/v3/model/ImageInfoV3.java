@@ -13,7 +13,8 @@ import lombok.ToString;
 import java.util.List;
 
 @JsonPropertyOrder({ "@context", "id", "type", "protocol", "profile", "width", "height",
-        "maxWidth", "maxHeight", "maxArea", "sizes", "tiles", "preferredFormats", "extraFormats", "extraFeatures" })
+        "maxWidth", "maxHeight", "maxArea", "sizes", "tiles", "preferredFormats", "extraFormats",
+        "extraFeatures", "extraQualities" })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
 @Getter

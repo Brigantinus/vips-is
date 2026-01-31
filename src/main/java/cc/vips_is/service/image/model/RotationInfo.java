@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-public record RotationInfo(boolean mirrored, int rotation) {
+public record RotationInfo(boolean mirrored, float rotation) {
 
     public static RotationInfo fromString(String input) {
         log.trace("parse: rotation={}", input);
@@ -16,8 +16,6 @@ public record RotationInfo(boolean mirrored, int rotation) {
 
         String trimmed = input.trim();
         boolean mirrored = trimmed.startsWith("!");
-
-        // Extract the numeric part based on mirroring
         String numericPart = mirrored ? trimmed.substring(1) : trimmed;
 
         if (numericPart.isEmpty()) {
@@ -26,10 +24,10 @@ public record RotationInfo(boolean mirrored, int rotation) {
         }
 
         try {
-            int rawDegrees = Integer.parseInt(numericPart);
+            float rawDegrees = Float.parseFloat(numericPart);
 
             // Normalize degrees to the [0, 360) range
-            int normalizedDegrees = rawDegrees % 360;
+            float normalizedDegrees = rawDegrees % 360;
             if (normalizedDegrees < 0) {
                 normalizedDegrees += 360;
             }
@@ -37,9 +35,10 @@ public record RotationInfo(boolean mirrored, int rotation) {
             return new RotationInfo(mirrored, normalizedDegrees);
 
         } catch (NumberFormatException e) {
-            throw new InvalidParameterException("Invalid rotation value. Expected an integer.")
+            throw new InvalidParameterException("Invalid rotation value. Expected a number.")
                     .addContextValue("rotation", numericPart)
                     .addContextValue("input", input);
         }
     }
 }
+

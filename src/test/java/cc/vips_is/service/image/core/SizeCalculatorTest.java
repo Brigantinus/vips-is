@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SizeCalculatorTest {
 
+    SizeCalculator sizeCalculator = new SizeCalculator();
+
     @Test
     public void testCalculateSourceRegionFull() {
         // Given
@@ -15,7 +17,7 @@ public class SizeCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Size result = SizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
+        Size result = sizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
 
         // Then
         assertEquals(imageWidth, result.width());
@@ -30,7 +32,7 @@ public class SizeCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Size result = SizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
+        Size result = sizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
 
         // Then
         assertEquals(600, result.width());  // min(800, 600)
@@ -45,7 +47,7 @@ public class SizeCalculatorTest {
         int imageHeight = 800;
 
         // When
-        Size result = SizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
+        Size result = sizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
 
         // Then
         assertEquals(600, result.width());  // min(600, 800)
@@ -60,7 +62,7 @@ public class SizeCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Size result = SizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
+        Size result = sizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
 
         // Then
         assertEquals(300, result.width());
@@ -75,7 +77,7 @@ public class SizeCalculatorTest {
         int imageHeight = 600;
 
         // When
-        Size result = SizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
+        Size result = sizeCalculator.calculateSourceRegion(region, imageWidth, imageHeight);
 
         // Then
         assertEquals(400, result.width());  // 50% of 800 = 400
@@ -92,7 +94,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(800, result.width());
@@ -109,7 +111,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(100, result.width());
@@ -126,7 +128,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(400, result.width());
@@ -143,7 +145,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(400, result.width()); // 800 * (300/600) = 400
@@ -160,7 +162,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(400, result.width());  // 800 * 0.5 = 400
@@ -177,7 +179,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(400, result.width());
@@ -194,7 +196,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(400, result.width());
@@ -211,7 +213,7 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When
-        Size result = SizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
 
         // Then
         assertEquals(800, result.width());  // Should not upscale
@@ -222,10 +224,10 @@ public class SizeCalculatorTest {
     public void testCalculateRotationBoundingBoxNoRotation() {
         // Given
         Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 0);
+        RotationInfo rotation = new RotationInfo(false, 0.0f);
 
         // When
-        Size result = SizeCalculator.calculateRotationBoundingBox(current, rotation);
+        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
 
         // Then
         assertEquals(800, result.width());
@@ -236,10 +238,10 @@ public class SizeCalculatorTest {
     public void testCalculateRotationBoundingBox90Degrees() {
         // Given
         Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 90);
+        RotationInfo rotation = new RotationInfo(false, 90.0f);
 
         // When
-        Size result = SizeCalculator.calculateRotationBoundingBox(current, rotation);
+        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
 
         // Then
         assertEquals(600, result.width());  // Width and height swapped for 90 degree rotation
@@ -250,10 +252,10 @@ public class SizeCalculatorTest {
     public void testCalculateRotationBoundingBox270Degrees() {
         // Given
         Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 270);
+        RotationInfo rotation = new RotationInfo(false, 270.0f);
 
         // When
-        Size result = SizeCalculator.calculateRotationBoundingBox(current, rotation);
+        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
 
         // Then
         assertEquals(600, result.width());  // Width and height swapped for 270 degree rotation
@@ -264,10 +266,10 @@ public class SizeCalculatorTest {
     public void testCalculateRotationBoundingBox45Degrees() {
         // Given
         Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 45);
+        RotationInfo rotation = new RotationInfo(false, 45.0f);
 
         // When
-        Size result = SizeCalculator.calculateRotationBoundingBox(current, rotation);
+        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
 
         // Then
         assertEquals(990, result.width());  // Calculated using rotation formula
