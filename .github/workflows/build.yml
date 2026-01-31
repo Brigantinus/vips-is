@@ -60,10 +60,7 @@ jobs:
 
       - name: Run Build, Tests and Coverage
         run: |
-          mvn test jacoco:report --batch-mode \
-          -Dvipsffm.libpath.vips.override=${{ env.vips.libpath }} \
-          -Dvipsffm.libpath.glib.override=${{ env.glib.libpath }} \
-          -Dvipsffm.libpath.gobject.override=${{ env.gobject.libpath }}
+          mvn test jacoco:report --batch-mode
 
       - name: Publish Test Report
         uses: dorny/test-reporter@v1
