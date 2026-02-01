@@ -37,6 +37,7 @@ public class InfoResourceV3 {
 
     @GET
     @Path("/{identifier}")
+    @CacheConfigured
     public Response redirectToInfo(@PathParam("identifier") String identifier) {
         log.debug("Redirecting base URL for identifier={}", identifier);
 
@@ -81,6 +82,7 @@ public class InfoResourceV3 {
     @HEAD
     @Path("/{identifier}/info.json")
     @Produces({JSON_LD, MediaType.APPLICATION_JSON})
+    @CacheConfigured
     public Response exists(
             @PathParam("identifier") String identifier,
             @Context Request request) {
