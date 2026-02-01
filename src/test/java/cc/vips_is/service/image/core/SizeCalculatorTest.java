@@ -123,7 +123,7 @@ public class SizeCalculatorTest {
     @Test
     public void testCalculateScaledSizesWidthOnly() {
         // Given
-        SizeInfo size = SizeInfo.widthOnly(400);
+        SizeInfo size = SizeInfo.widthOnly(400, false);
         Size source = new Size(800, 600);
         int maxWidth = 1000;
         int maxHeight = 800;
@@ -140,7 +140,7 @@ public class SizeCalculatorTest {
     @Test
     public void testCalculateScaledSizesHeightOnly() {
         // Given
-        SizeInfo size = SizeInfo.heightOnly(300);
+        SizeInfo size = SizeInfo.heightOnly(300, false);
         Size source = new Size(800, 600);
         int maxWidth = 1000;
         int maxHeight = 800;

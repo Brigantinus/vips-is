@@ -34,12 +34,12 @@ public class SizeInfo {
         return new SizeInfo(SizeType.MAX, null, null, null, true, true);
     }
 
-    public static SizeInfo widthOnly(int width) {
-        return new SizeInfo(SizeType.WIDTH_ONLY, width, null, null, false, true);
+    public static SizeInfo widthOnly(int width, boolean upscalingAllowed) {
+        return new SizeInfo(SizeType.WIDTH_ONLY, width, null, null, upscalingAllowed, true);
     }
 
-    public static SizeInfo heightOnly(int height) {
-        return new SizeInfo(SizeType.HEIGHT_ONLY, null, height, null, false, true);
+    public static SizeInfo heightOnly(int height, boolean upscalingAllowed) {
+        return new SizeInfo(SizeType.HEIGHT_ONLY, null, height, null, upscalingAllowed, true);
     }
 
     public static SizeInfo widthHeight(int width, int height, boolean upscalingAllowed, boolean maintainAspectRatio) {
@@ -132,8 +132,8 @@ public class SizeInfo {
             throw new InvalidParameterException("Width and height cannot both be empty.");
         }
 
-        if (Objects.isNull(width)) return SizeInfo.heightOnly(height);
-        if (Objects.isNull(height)) return SizeInfo.widthOnly(width);
+        if (Objects.isNull(width)) return SizeInfo.heightOnly(height, upscale);
+        if (Objects.isNull(height)) return SizeInfo.widthOnly(width, upscale);
 
         return SizeInfo.widthHeight(width, height, upscale, keepAspect);
     }

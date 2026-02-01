@@ -31,7 +31,7 @@ public class SizeInfoTest {
 
     @Test
     public void testWidthOnly() {
-        SizeInfo sizeInfo = SizeInfo.widthOnly(100);
+        SizeInfo sizeInfo = SizeInfo.widthOnly(100, false);
         assertEquals(SizeType.WIDTH_ONLY, sizeInfo.getType());
         assertEquals(Integer.valueOf(100), sizeInfo.getWidth());
         assertNull(sizeInfo.getHeight());
@@ -42,7 +42,7 @@ public class SizeInfoTest {
 
     @Test
     public void testHeightOnly() {
-        SizeInfo sizeInfo = SizeInfo.heightOnly(200);
+        SizeInfo sizeInfo = SizeInfo.heightOnly(200, false);
         assertEquals(SizeType.HEIGHT_ONLY, sizeInfo.getType());
         assertNull(sizeInfo.getWidth());
         assertEquals(Integer.valueOf(200), sizeInfo.getHeight());
