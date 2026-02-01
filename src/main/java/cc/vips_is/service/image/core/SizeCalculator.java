@@ -1,6 +1,6 @@
 package cc.vips_is.service.image.core;
 
-import cc.vips_is.service.image.model.*;
+import cc.vips_is.service.image.exceptions.InvalidParameterException;
 import cc.vips_is.service.image.model.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
@@ -38,20 +38,18 @@ public class SizeCalculator {
         };
     }
 
-    Size calculateScaledSizes(SizeInfo size, Size source, int maxWidth, int maxHeight, long maxArea) {
-        log.debug("calculateScaledSizes: size={}, source={}", size, source);
+    Size calculateScaledSizes(SizeInfo sizeInfo, Size source, int maxWidth, int maxHeight, long maxArea) {
+        log.debug("calculateScaledSizes: sizeInfo={}, source={}", sizeInfo, source);
 
-        Size target = switch (size.getType()) {
-            case MAX          -> scaleMax(source, maxWidth, maxHeight, maxArea, size.isUpscalingAllowed());
-            case WIDTH_ONLY   -> scaleByWidth(source, size.getWidth());
-            case HEIGHT_ONLY  -> scaleByHeight(source, size.getHeight());
-            case PERCENTAGE   -> scaleByFactor(source, size.getPercentage() / 100.0);
-            case WIDTH_HEIGHT -> scaleByWidthAndHeight(source, size);
+        Size target = switch (sizeInfo.getType()) {
+            case MAX          -> scaleMax(source, maxWidth, maxHeight, maxArea, sizeInfo.isUpscalingAllowed());
+            case WIDTH_ONLY   -> scaleByWidth(source, sizeInfo.getWidth());
+            case HEIGHT_ONLY  -> scaleByHeight(source, sizeInfo.getHeight());
+            case PERCENTAGE   -> scaleByFactor(source, sizeInfo.getPercentage() / 100.0);
+            case WIDTH_HEIGHT -> scaleByWidthAndHeight(source, sizeInfo);
         };
 
-        if (!size.isUpscalingAllowed()) {
-            target = preventUpscaling(target, source);
-        }
+        preventUpscaling(sizeInfo, target, source);
 
         return new Size(Math.max(1, target.width()), Math.max(1, target.height()));
     }
@@ -98,13 +96,12 @@ public class SizeCalculator {
         return scaleByFactor(source, scale);
     }
 
-    private Size preventUpscaling(Size target, Size source) {
-        if (target.width() <= source.width() && target.height() <= source.height()) {
-            return target;
+    private void preventUpscaling(SizeInfo sizeInfo, Size target, Size source) {
+        if (!sizeInfo.isUpscalingAllowed()) {
+            if (target.width() > source.width() || target.height() > source.height()) {
+                throw new InvalidParameterException("Requested size requires upscaling.");
+            }
         }
-        double k = Math.min((double) source.width() / target.width(),
-                (double) source.height() / target.height());
-        return scaleByFactor(target, k);
     }
 
     Size calculateRotationBoundingBox(Size current, RotationInfo rotation) {
@@ -118,8 +115,8 @@ public class SizeCalculator {
         double cos = Math.abs(Math.cos(rad));
         double sin = Math.abs(Math.sin(rad));
 
-                int newW = (int) Math.round(current.width() * cos + current.height() * sin);
-                int newH = (int) Math.round(current.width() * sin + current.height() * cos);
+        int newW = (int) Math.round(current.width() * cos + current.height() * sin);
+        int newH = (int) Math.round(current.width() * sin + current.height() * cos);
 
         return new Size(newW, newH);
     }

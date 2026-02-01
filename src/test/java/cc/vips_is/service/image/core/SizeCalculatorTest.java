@@ -1,9 +1,11 @@
 package cc.vips_is.service.image.core;
 
+import cc.vips_is.service.image.exceptions.InvalidParameterException;
 import cc.vips_is.service.image.model.*;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SizeCalculatorTest {
 
@@ -212,12 +214,10 @@ public class SizeCalculatorTest {
         int maxHeight = 800;
         long maxArea = 1000000;
 
-        // When
-        Size result = sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
-
-        // Then
-        assertEquals(800, result.width());  // Should not upscale
-        assertEquals(600, result.height()); // Should not upscale
+        // When & Then
+        assertThrows(InvalidParameterException.class, () -> {
+            sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
+        });
     }
 
     @Test

@@ -67,22 +67,21 @@ public class ImageServiceImpl implements ImageService {
         log.debug("processImage: request={}", request);
 
         Path inputPath = storageService.resolve(request.identifier());
+        ImageData imageData = vipsProcessor.readImageData(request.identifier(), inputPath);
+        final int width = imageData.width();
+        final int height = imageData.height();
+
+        Size size = sizeCalculator.calculateSize(request, width, height, config.maxWidth(), config.maxHeight(), config.maxArea());
+
+        validateConstraints(size);
+
+        Region region = regionCalculator.calculateRegion(request.regionInfo(), width, height);
 
         return output -> {
             try {
                 Vips.run(arena -> {
                     VImage image = VImage.newFromFile(arena, inputPath.toString());
-                    int imageWidth = image.getWidth();
-                    int imageHeight = image.getHeight();
-
-                    Size size = sizeCalculator.calculateSize(request, imageWidth, imageHeight,
-                            config.maxWidth(), config.maxHeight(), config.maxArea());
-
-                    validateConstraints(size);
-
-                    Region region = regionCalculator.calculateRegion(request.regionInfo(), imageWidth, imageHeight);
-
-                    image = vipsProcessor.applyCrop(image, region, imageWidth, imageHeight);
+                    image = vipsProcessor.applyCrop(image, region, width, height);
                     image = vipsProcessor.applyResize(image, size);
                     image = vipsProcessor.applyRotation(image, request.rotationInfo());
                     image = vipsProcessor.applyQuality(image, request.qualityMode());
