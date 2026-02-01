@@ -75,7 +75,7 @@ public class VipsProcessor {
 
     public VImage applyRotation(VImage image, RotationInfo rotationInfo) {
         log.debug("applyRotation: {}", rotationInfo);
-        if (rotationInfo.rotation() == 0.0f) {
+        if (!rotationInfo.mirrored() && rotationInfo.rotation() == 0.0f) {
             return image;
         }
 
