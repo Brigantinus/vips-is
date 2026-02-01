@@ -29,6 +29,8 @@ public class InfoResourceV3 {
 
     private static final String JSON_LD = "application/ld+json";
 
+    private static final String LINK_LEVEL2 = "<http://iiif.io/api/image/3/level2.json>;rel=\"profile\"";
+
     @Inject
     ImageService imageService;
 
@@ -76,6 +78,7 @@ public class InfoResourceV3 {
 
         return Response.ok(imageInfoV3)
                 .type(responseType)
+                .header(HttpHeaders.LINK, LINK_LEVEL2)
                 .build();
     }
 
@@ -92,6 +95,7 @@ public class InfoResourceV3 {
 
         return (exists ? Response.ok() : Response.status(NOT_FOUND))
                 .type(responseType)
+                .header(HttpHeaders.LINK, LINK_LEVEL2)
                 .build();
     }
 
