@@ -1,6 +1,7 @@
 package cc.vips_is.service.image.core;
 
 import app.photofox.vipsffm.*;
+import app.photofox.vipsffm.enums.VipsAngle;
 import app.photofox.vipsffm.enums.VipsDirection;
 import app.photofox.vipsffm.enums.VipsInterpretation;
 import app.photofox.vipsffm.enums.VipsOperationRelational;
@@ -74,7 +75,7 @@ public class VipsProcessor {
     }
 
     public VImage applyRotation(VImage image, RotationInfo rotationInfo) {
-        log.debug("applyRotation: {}", rotationInfo);
+        log.debug("applyRotation: {}, w{}, h={}", rotationInfo, image.getWidth(), image.getHeight());
         if (!rotationInfo.mirrored() && rotationInfo.rotation() == 0.0f) {
             return image;
         }
@@ -82,7 +83,17 @@ public class VipsProcessor {
         if (rotationInfo.mirrored()) {
             image = image.flip(VipsDirection.DIRECTION_HORIZONTAL);
         }
-        return image.rotate(rotationInfo.rotation(), VipsOption.Boolean("linear", true));
+
+        final float angle = rotationInfo.rotation();
+        if (angle == 90.0f) {
+            return image.rot(VipsAngle.ANGLE_D90);
+        } else if (angle == 180.0f) {
+            return image.rot(VipsAngle.ANGLE_D180);
+        } else if (angle == 270.0f) {
+            return image.rot(VipsAngle.ANGLE_D270);
+        } else {
+            return image.rotate(rotationInfo.rotation(), VipsOption.Boolean("linear", true));
+        }
     }
 
     public VImage applyQuality(VImage image, QualityMode quality) {
