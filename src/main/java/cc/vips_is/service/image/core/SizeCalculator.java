@@ -14,7 +14,6 @@ public class SizeCalculator {
 
         Size size = calculateSourceRegion(request.regionInfo(), imageWidth, imageHeight);
         size = calculateScaledSizes(request.sizeInfo(), size, maxWidth, maxHeight, maxArea);
-        size = calculateRotationBoundingBox(size, request.rotationInfo());
 
         log.debug("calculateSize: size={}", size);
 
@@ -104,20 +103,4 @@ public class SizeCalculator {
         }
     }
 
-    Size calculateRotationBoundingBox(Size current, RotationInfo rotation) {
-        log.debug("calculateRotationBoundingBox: current={}, rotation={}", current, rotation);
-
-        if (rotation.rotation() == 0.0f || rotation.rotation() == 180.0f) return current;
-        if (rotation.rotation() == 90.0f || rotation.rotation() == 270.0f)
-            return new Size(current.height(), current.width());
-
-        double rad = Math.toRadians(rotation.rotation());
-        double cos = Math.abs(Math.cos(rad));
-        double sin = Math.abs(Math.sin(rad));
-
-        int newW = (int) Math.round(current.width() * cos + current.height() * sin);
-        int newH = (int) Math.round(current.width() * sin + current.height() * cos);
-
-        return new Size(newW, newH);
-    }
 }
