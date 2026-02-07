@@ -88,11 +88,11 @@ public class SizeInfo {
             throw new InvalidParameterException("Size parameter contains negative value");
         }
 
-        boolean upscalingAllowed = size.startsWith(UPSCALE_PREFIX);
-        String cleaned = upscalingAllowed ? size.substring(1) : size;
+        boolean maintainAspectRatio = size.contains(ASPECT_RATIO_PREFIX);
+        String cleaned = size.replace(ASPECT_RATIO_PREFIX, "");
 
-        boolean maintainAspectRatio = cleaned.contains(ASPECT_RATIO_PREFIX);
-        cleaned = cleaned.replace(ASPECT_RATIO_PREFIX, "");
+        boolean upscalingAllowed = cleaned.contains(UPSCALE_PREFIX);
+        cleaned = size.replace(UPSCALE_PREFIX, "");
 
         if (MAX.equals(cleaned)) {
             return upscalingAllowed ? SizeInfo.maxUpscale() : SizeInfo.max();

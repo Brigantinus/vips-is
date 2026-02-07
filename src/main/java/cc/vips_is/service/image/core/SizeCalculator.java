@@ -30,7 +30,7 @@ public class SizeCalculator {
                 int minSide = Math.min(imageWidth, imageHeight);
                 yield new Size(minSide, minSide);
             }
-            case PIXELS -> new Size(region.width(), region.height());
+            case PIXELS -> new Size((int) region.width(), (int) region.height());
             case PERCENTAGE -> new Size(
                     (int) Math.round(imageWidth * region.width() / 100.0),
                     (int) Math.round(imageHeight * region.height() / 100.0)

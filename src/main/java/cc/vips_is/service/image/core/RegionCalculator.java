@@ -37,15 +37,15 @@ public class RegionCalculator {
     }
 
     Region regionPixel(RegionInfo regionInfo, int imageWidth, int imageHeight) {
-        int x = regionInfo.x();
-        int y = regionInfo.y();
+        int x = (int) regionInfo.x();
+        int y = (int) regionInfo.y();
 
         if (x >= imageWidth || y >= imageHeight) {
             throw new InvalidParameterException("Region x,y coordinates are outside image bounds.");
         }
 
-        int width = Math.min(regionInfo.width(), imageWidth - x);
-        int height = Math.min(regionInfo.height(), imageHeight - y);
+        int width = Math.min((int) regionInfo.width(), imageWidth - x);
+        int height = Math.min((int) regionInfo.height(), imageHeight - y);
 
         return new Region(x, y, width, height);
     }
@@ -55,6 +55,9 @@ public class RegionCalculator {
         int y = (int) Math.round(regionInfo.y() * imageHeight / 100.0);
         int width = (int) Math.round(regionInfo.width() * imageWidth / 100.0);
         int height = (int) Math.round(regionInfo.height() * imageHeight / 100.0);
+
+        width = Math.min(width, imageWidth - x);
+        height = Math.min(height, imageHeight - y);
 
         return new Region(x, y, width, height);
     }
