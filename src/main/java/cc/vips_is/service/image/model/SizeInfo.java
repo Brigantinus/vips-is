@@ -92,7 +92,7 @@ public class SizeInfo {
         String cleaned = size.replace(ASPECT_RATIO_PREFIX, "");
 
         boolean upscalingAllowed = cleaned.contains(UPSCALE_PREFIX);
-        cleaned = size.replace(UPSCALE_PREFIX, "");
+        cleaned = cleaned.replace(UPSCALE_PREFIX, "");
 
         if (MAX.equals(cleaned)) {
             return upscalingAllowed ? SizeInfo.maxUpscale() : SizeInfo.max();
