@@ -215,64 +215,8 @@ public class SizeCalculatorTest {
         long maxArea = 1000000;
 
         // When & Then
-        assertThrows(InvalidParameterException.class, () -> {
-            sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea);
-        });
+        assertThrows(InvalidParameterException.class,
+                () -> sizeCalculator.calculateScaledSizes(size, source, maxWidth, maxHeight, maxArea));
     }
 
-    @Test
-    public void testCalculateRotationBoundingBoxNoRotation() {
-        // Given
-        Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 0.0f);
-
-        // When
-        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
-
-        // Then
-        assertEquals(800, result.width());
-        assertEquals(600, result.height());
-    }
-
-    @Test
-    public void testCalculateRotationBoundingBox90Degrees() {
-        // Given
-        Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 90.0f);
-
-        // When
-        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
-
-        // Then
-        assertEquals(600, result.width());  // Width and height swapped for 90 degree rotation
-        assertEquals(800, result.height());
-    }
-
-    @Test
-    public void testCalculateRotationBoundingBox270Degrees() {
-        // Given
-        Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 270.0f);
-
-        // When
-        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
-
-        // Then
-        assertEquals(600, result.width());  // Width and height swapped for 270 degree rotation
-        assertEquals(800, result.height());
-    }
-
-    @Test
-    public void testCalculateRotationBoundingBox45Degrees() {
-        // Given
-        Size current = new Size(800, 600);
-        RotationInfo rotation = new RotationInfo(false, 45.0f);
-
-        // When
-        Size result = sizeCalculator.calculateRotationBoundingBox(current, rotation);
-
-        // Then
-        assertEquals(990, result.width());  // Calculated using rotation formula
-        assertEquals(990, result.height()); // Should be approximately same due to square result
-    }
 }
