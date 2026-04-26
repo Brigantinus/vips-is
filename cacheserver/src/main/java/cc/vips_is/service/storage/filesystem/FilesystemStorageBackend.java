@@ -5,6 +5,7 @@ import cc.vips_is.service.storage.exceptions.ImageNotFoundException;
 import cc.vips_is.service.storage.exceptions.StorageException;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Typed;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @ApplicationScoped
+@Typed(FilesystemStorageBackend.class)
 @Slf4j
 public class FilesystemStorageBackend implements StorageBackend {
 

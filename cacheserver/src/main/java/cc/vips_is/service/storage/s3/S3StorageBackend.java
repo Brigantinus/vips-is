@@ -4,6 +4,7 @@ import cc.vips_is.service.storage.StorageBackend;
 import cc.vips_is.service.storage.exceptions.ImageNotFoundException;
 import cc.vips_is.service.storage.exceptions.StorageException;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Typed;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +32,7 @@ import java.util.Optional;
  *   storage.s3.endpoint=http://minio:9000
  */
 @ApplicationScoped
+@Typed(S3StorageBackend.class)
 @Slf4j
 public class S3StorageBackend implements StorageBackend {
 
