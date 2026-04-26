@@ -64,3 +64,6 @@ hs_err_pid*
 replay_pid*
 
 /images/*
+/shared/target/
+/imageserver/target/
+/cacheserver/target/

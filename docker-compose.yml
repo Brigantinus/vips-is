@@ -1,0 +1,156 @@
+# vips-is docker-compose
+#
+# Mirrors the Kubernetes setup:
+#   nginx          – ingress with consistent-hash routing by IIIF identifier
+#   imageserver-N  – 3 ImageServer replicas (vips + gRPC client to cacheserver)
+#   cacheserver    – single shared cache (FIFO off-heap, gRPC server, mTLS)
+#   gen-certs      – one-shot init container that creates the internal CA and
+#                    per-service certificates on first start
+#
+# Usage:
+#   docker compose up --build
+#
+# To disable mTLS (plain gRPC, dev mode):
+#   QUARKUS_PROFILE=dev docker compose up
+#
+# Image storage:
+#   By default the cacheserver loads images from the "image-storage" Docker
+#   volume, which you can pre-populate or replace with a bind mount:
+#     volumes:
+#       image-storage:
+#         driver: local
+#         driver_opts:
+#           type: none
+#           o: bind
+#           device: /path/to/your/images
+#
+# Scaling ImageServer:
+#   The nginx.conf lists 3 backends (imageserver-1/2/3) explicitly so that
+#   consistent hashing works without NGINX Plus. To change the replica count,
+#   add/remove services below AND update docker/nginx.conf accordingly.
+
+# ── Shared ImageServer config ─────────────────────────────────────────────────
+
+x-imageserver: &imageserver
+  image: ghcr.io/brigantinus/vips-is/imageserver:latest
+  build:
+    context: .
+    dockerfile: docker/vips-is-imageserver.Dockerfile
+  depends_on:
+    gen-certs:
+      condition: service_completed_successfully
+    cacheserver:
+      condition: service_healthy
+  environment:
+    # gRPC client → cacheserver
+    QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_HOST: cacheserver
+    QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_PORT: "9000"
+    # Override default /certs/tls.crt with the imageserver client cert
+    QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_SSL_CERTIFICATE:      /certs/imageserver.crt
+    QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_SSL_KEY:              /certs/imageserver.key
+    QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_SSL_TRUST_CERTIFICATE: /certs/ca.crt
+  volumes:
+    - certs:/certs:ro
+  networks:
+    - frontend
+    - backend
+  healthcheck:
+    # TCP check on the Quarkus management port (no curl needed in the image)
+    test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9000' 2>/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 6
+    start_period: 30s
+
+# ── Services ──────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Init: certificate generation ──────────────────────────────────────────
+  gen-certs:
+    image: alpine:3.20
+    command: sh /scripts/gen-certs.sh
+    volumes:
+      - certs:/certs
+      - ./docker/gen-certs.sh:/scripts/gen-certs.sh:ro
+
+  # ── CacheServer ────────────────────────────────────────────────────────────
+  cacheserver:
+    image: ghcr.io/brigantinus/vips-is/cacheserver:latest
+    build:
+      context: .
+      dockerfile: docker/vips-is-cacheserver.Dockerfile
+    depends_on:
+      gen-certs:
+        condition: service_completed_successfully
+    environment:
+      # Override default /certs/tls.crt with the cacheserver server cert
+      QUARKUS_GRPC_SERVER_SSL_CERTIFICATE:      /certs/cacheserver.crt
+      QUARKUS_GRPC_SERVER_SSL_KEY:              /certs/cacheserver.key
+      QUARKUS_GRPC_SERVER_SSL_TRUST_CERTIFICATE: /certs/ca.crt
+      # Storage — override to "s3" and supply AWS env vars for S3 backend:
+      # STORAGE_TYPE: s3
+      # STORAGE_S3_ENDPOINT: http://minio:9000
+      # STORAGE_S3_REGION: us-east-1
+      # STORAGE_S3_DEFAULT__BUCKET: images
+      # AWS_ACCESS_KEY_ID: ...
+      # AWS_SECRET_ACCESS_KEY: ...
+    volumes:
+      - certs:/certs:ro
+      - image-storage:/data/images
+    networks:
+      - backend
+    healthcheck:
+      # TCP check on gRPC port — management is on 9001, gRPC on 9000
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9000' 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  # ── ImageServer replicas ────────────────────────────────────────────────────
+  # Three named replicas so nginx can list them explicitly in its upstream block.
+  # All three share the same config via the x-imageserver anchor above.
+
+  imageserver-1:
+    <<: *imageserver
+
+  imageserver-2:
+    <<: *imageserver
+
+  imageserver-3:
+    <<: *imageserver
+
+  # ── nginx ingress (consistent-hash load balancer) ──────────────────────────
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    depends_on:
+      imageserver-1:
+        condition: service_healthy
+      imageserver-2:
+        condition: service_healthy
+      imageserver-3:
+        condition: service_healthy
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - frontend
+
+# ── Volumes & Networks ────────────────────────────────────────────────────────
+
+volumes:
+  # Shared mTLS certificates (populated once by gen-certs, then read-only)
+  certs:
+
+  # Image source files consumed by the cacheserver filesystem backend.
+  # Replace with a bind mount pointing at your image directory if needed
+  # (see comment at the top of this file).
+  image-storage:
+
+networks:
+  # nginx ↔ imageserver traffic (plain HTTP inside the compose network)
+  frontend:
+  # imageserver ↔ cacheserver traffic (mTLS gRPC)
+  backend:

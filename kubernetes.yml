@@ -1,0 +1,428 @@
+# vips-is Kubernetes deployment
+#
+# Prerequisites:
+#   - NGINX Ingress Controller (https://kubernetes.github.io/ingress-nginx)
+#   - cert-manager (https://cert-manager.io)
+#   - A StorageClass that supports ReadWriteOnce (for the image storage PVC)
+#
+# Consistent-hash routing:
+#   The Ingress extracts the IIIF identifier from the request URI and uses it
+#   as the upstream hash key. This sends all tile requests for the same image
+#   to the same ImageServer pod, keeping the gRPC round-trip count low.
+#
+# mTLS:
+#   ImageServer ↔ CacheServer communication is protected by mutual TLS.
+#   Certificates are managed by cert-manager and rotated automatically.
+#   Mount paths expected: /certs/tls.crt, /certs/tls.key, /certs/ca.crt
+#
+# Image registry:
+#   Replace ghcr.io/brigantinus/vips-is with your own registry.
+#
+# Scaling:
+#   Adjust imageserver replicas or attach an HPA (example included at the end).
+#   CacheServer runs as a single replica — it is the shared in-process cache.
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vips-is
+
+# ── cert-manager: internal CA ────────────────────────────────────────────────
+
+---
+# Step 1: bootstrap a self-signed issuer to create the internal CA certificate.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: vips-is-selfsigned
+spec:
+  selfSigned: {}
+
+---
+# Step 2: the internal CA certificate (stored as a Secret in the namespace).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vips-is-ca
+  namespace: vips-is
+spec:
+  isCA: true
+  commonName: vips-is-internal-ca
+  secretName: vips-is-ca-secret
+  duration: 87600h   # 10 years
+  renewBefore: 720h  # 30 days
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: vips-is-selfsigned
+    kind: ClusterIssuer
+
+---
+# Step 3: a namespaced issuer backed by the internal CA.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: vips-is-ca-issuer
+  namespace: vips-is
+spec:
+  ca:
+    secretName: vips-is-ca-secret
+
+---
+# CacheServer TLS certificate (server identity + client-auth SAN).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cacheserver-tls
+  namespace: vips-is
+spec:
+  secretName: cacheserver-tls
+  duration: 8760h
+  renewBefore: 720h
+  subject:
+    organizations: [vips-is]
+  commonName: cacheserver
+  dnsNames:
+    - cacheserver
+    - cacheserver.vips-is.svc.cluster.local
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: vips-is-ca-issuer
+    kind: Issuer
+
+---
+# ImageServer client certificate (presented to CacheServer for mTLS).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: imageserver-tls
+  namespace: vips-is
+spec:
+  secretName: imageserver-tls
+  duration: 8760h
+  renewBefore: 720h
+  subject:
+    organizations: [vips-is]
+  commonName: imageserver
+  dnsNames:
+    - imageserver
+    - imageserver.vips-is.svc.cluster.local
+  usages:
+    - client auth
+  issuerRef:
+    name: vips-is-ca-issuer
+    kind: Issuer
+
+# ── Storage ──────────────────────────────────────────────────────────────────
+
+---
+# PVC for the image source files consumed by the CacheServer filesystem backend.
+# Switch to S3 by setting storage.type=s3 in the CacheServer config and
+# removing this PVC and its volumeMount.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: image-storage
+  namespace: vips-is
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  # storageClassName: standard  # uncomment and set your StorageClass
+
+# ── CacheServer ───────────────────────────────────────────────────────────────
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cacheserver
+  namespace: vips-is
+  labels:
+    app: cacheserver
+spec:
+  type: ClusterIP
+  selector:
+    app: cacheserver
+  ports:
+    - name: grpc
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: management
+      port: 9001
+      targetPort: 9001
+      protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cacheserver
+  namespace: vips-is
+  labels:
+    app: cacheserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cacheserver
+  template:
+    metadata:
+      labels:
+        app: cacheserver
+    spec:
+      containers:
+        - name: cacheserver
+          image: ghcr.io/brigantinus/vips-is/cacheserver:latest
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 9000
+            - name: management
+              containerPort: 9001
+          env:
+            - name: STORAGE_TYPE
+              value: "filesystem"
+            # For S3 backend, supply AWS credentials via a Secret:
+            # - name: AWS_ACCESS_KEY_ID
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: aws-credentials
+            #       key: access-key-id
+            # - name: AWS_SECRET_ACCESS_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: aws-credentials
+            #       key: secret-access-key
+          volumeMounts:
+            - name: image-storage
+              mountPath: /data/images
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /metrics/json
+              port: 9001
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics/json
+              port: 9001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "8Gi"   # headroom for off-heap image cache
+              cpu: "2"
+      volumes:
+        - name: image-storage
+          persistentVolumeClaim:
+            claimName: image-storage
+        - name: certs
+          projected:
+            sources:
+              - secret:
+                  name: cacheserver-tls
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: vips-is-ca-secret
+                  items:
+                    - key: tls.crt
+                      path: ca.crt
+
+---
+# Prevent CacheServer from being evicted during node pressure — it holds the cache.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cacheserver-pdb
+  namespace: vips-is
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cacheserver
+
+# ── ImageServer ───────────────────────────────────────────────────────────────
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imageserver
+  namespace: vips-is
+  labels:
+    app: imageserver
+spec:
+  type: ClusterIP
+  selector:
+    app: imageserver
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: management
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imageserver
+  namespace: vips-is
+  labels:
+    app: imageserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: imageserver
+  template:
+    metadata:
+      labels:
+        app: imageserver
+    spec:
+      containers:
+        - name: imageserver
+          image: ghcr.io/brigantinus/vips-is/imageserver:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: management
+              containerPort: 9000
+          env:
+            - name: QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_HOST
+              value: "cacheserver"
+            - name: QUARKUS_GRPC_CLIENTS_CACHE__SERVICE_PORT
+              value: "9000"
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /metrics/json
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics/json
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2"
+      volumes:
+        - name: certs
+          projected:
+            sources:
+              - secret:
+                  name: imageserver-tls
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: vips-is-ca-secret
+                  items:
+                    - key: tls.crt
+                      path: ca.crt
+
+# ── Ingress with consistent-hash routing ─────────────────────────────────────
+
+---
+# The server-snippet extracts the IIIF identifier from the request URI and
+# stores it in $iiif_id. The upstream-hash-by annotation uses that variable
+# so that all tile requests for the same image go to the same ImageServer pod.
+#
+# This requires the NGINX Ingress Controller (kubernetes/ingress-nginx).
+# Replace the host value and TLS secret name to match your environment.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: imageserver
+  namespace: vips-is
+  annotations:
+    # Extract the IIIF identifier (third path segment after /iiif/vN/image/)
+    # and use it as the consistent-hash key so all tiles of the same image
+    # land on the same ImageServer pod.
+    nginx.ingress.kubernetes.io/server-snippet: |
+      set $iiif_id $request_uri;
+      if ($request_uri ~* "^/iiif/v[23]/image/([^/]+)") {
+        set $iiif_id $1;
+      }
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$iiif_id"
+
+    # Optional: enable TLS termination at the ingress.
+    # The Ingress → ImageServer leg uses plain HTTP inside the cluster.
+    # ImageServer → CacheServer uses mTLS (handled by the apps themselves).
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - images.example.com
+      secretName: ingress-tls   # provide via cert-manager ACME or manually
+  rules:
+    - host: images.example.com
+      http:
+        paths:
+          - path: /iiif
+            pathType: Prefix
+            backend:
+              service:
+                name: imageserver
+                port:
+                  number: 8080
+
+# ── Horizontal Pod Autoscaler (optional) ─────────────────────────────────────
+
+---
+# Scale ImageServer pods between 2 and 10 based on CPU load.
+# CacheServer is intentionally excluded — it must stay at 1 replica.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: imageserver-hpa
+  namespace: vips-is
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: imageserver
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

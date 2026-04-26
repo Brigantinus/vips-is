@@ -26,7 +26,7 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v42
         with:
-          files: docker/vis-is-base.Dockerfile
+          files: docker/vips-is-base.Dockerfile
 
       - name: Log in to GHCR
         if: steps.changed-files.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
@@ -77,12 +77,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push App Image
+      - name: Build and push Imageserver Image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/vips-is-app.Dockerfile
+          file: docker/vips-is-imageserver.Dockerfile
           push: true
           build-args: |
             BASE_IMAGE=${{ env.image }}/vips-is-base:latest
-          tags: ${{ env.image }}:latest
+          tags: ${{ env.image }}/imageserver:latest
+
+      - name: Build and push Cacheserver Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/vips-is-cacheserver.Dockerfile
+          push: true
+          tags: ${{ env.image }}/cacheserver:latest

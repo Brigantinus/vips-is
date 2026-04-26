@@ -1,0 +1,116 @@
+syntax = "proto3";
+package vips.cache.v1;
+
+option java_package = "cc.vips_is.grpc";
+option java_outer_classname = "CacheServiceProto";
+option java_multiple_files = true;
+
+import "google/protobuf/empty.proto";
+
+service CacheService {
+    rpc GetOriginal (IdentifierRequest)     returns (stream Chunk);
+    rpc GetInfo     (IdentifierRequest)     returns (CachedImageInfo);
+    rpc PutInfo     (PutInfoRequest)        returns (google.protobuf.Empty);
+    rpc GetDerived  (DerivedRequest)        returns (stream Chunk);
+    rpc PutDerived  (stream DerivedChunk)   returns (PutResponse);
+    rpc Evict       (IdentifierRequest)     returns (google.protobuf.Empty);
+    rpc Stats       (google.protobuf.Empty) returns (CacheStats);
+}
+
+message IdentifierRequest {
+    string identifier = 1;
+}
+
+message Chunk {
+    bytes data = 1;
+}
+
+enum ProtoRegionType {
+    FULL       = 0;
+    SQUARE     = 1;
+    PIXELS     = 2;
+    PERCENTAGE = 3;
+}
+
+message RegionParam {
+    ProtoRegionType type   = 1;
+    float           x      = 2;
+    float           y      = 3;
+    float           width  = 4;
+    float           height = 5;
+}
+
+enum ProtoSizeType {
+    SIZE_MAX          = 0;
+    SIZE_WIDTH_ONLY   = 1;
+    SIZE_HEIGHT_ONLY  = 2;
+    SIZE_WIDTH_HEIGHT = 3;
+    SIZE_PERCENTAGE   = 4;
+}
+
+message SizeParam {
+    ProtoSizeType type                  = 1;
+    int32         width                 = 2;
+    int32         height                = 3;
+    double        percentage            = 4;
+    bool          upscaling_allowed     = 5;
+    bool          maintain_aspect_ratio = 6;
+}
+
+message RotationParam {
+    bool  mirrored = 1;
+    float rotation = 2;
+}
+
+message DerivedRequest {
+    string        identifier = 1;
+    RegionParam   region     = 2;
+    SizeParam     size       = 3;
+    RotationParam rotation   = 4;
+    string        quality    = 5;
+    string        format     = 6;
+}
+
+message DerivedChunk {
+    DerivedRequest key  = 1;
+    bytes          data = 2;
+}
+
+message PutResponse {
+    bool stored = 1;
+}
+
+message ImageSize {
+    int32 width  = 1;
+    int32 height = 2;
+}
+
+message TileSpec {
+    int32          width         = 1;
+    int32          height        = 2;
+    repeated int32 scale_factors = 3;
+}
+
+message CachedImageInfo {
+    string             id          = 1;
+    int32              width       = 2;
+    int32              height      = 3;
+    int32              tile_width  = 4;
+    int32              tile_height = 5;
+    repeated ImageSize sizes       = 6;
+    repeated TileSpec  tiles       = 7;
+    int32              max_width   = 8;
+    int32              max_height  = 9;
+}
+
+message PutInfoRequest {
+    string          identifier = 1;
+    CachedImageInfo info       = 2;
+}
+
+message CacheStats {
+    int64  entry_count   = 1;
+    int64  current_bytes = 2;
+    int64  max_bytes     = 3;
+    double hit_rate      = 4;
+}
